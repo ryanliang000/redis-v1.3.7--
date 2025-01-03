@@ -41,7 +41,7 @@
 list *listCreate(void)
 {
     struct list *list;
-
+    // 内存申请创建一个list，并初始化参数，包括头尾指针、长度等
     if ((list = zmalloc(sizeof(*list))) == NULL)
         return NULL;
     list->head = list->tail = NULL;
@@ -59,7 +59,7 @@ void listRelease(list *list)
 {
     unsigned int len;
     listNode *current, *next;
-
+    // 从内存中释放一个list，从head往后依次释放node.value, node
     current = list->head;
     len = list->len;
     while(len--) {

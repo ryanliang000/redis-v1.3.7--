@@ -80,15 +80,19 @@ void listRelease(list *list)
 list *listAddNodeHead(list *list, void *value)
 {
     listNode *node;
-
+    
+    // 创建一个节点，把value放入
     if ((node = zmalloc(sizeof(*node))) == NULL)
         return NULL;
     node->value = value;
+
+    // 把节点放入到head位置，把原head向后移
     if (list->len == 0) {
         list->head = list->tail = node;
+        // 首节点无prev，尾节点无next
         node->prev = node->next = NULL;
     } else {
-        node->prev = NULL;
+        node->prev = NULL; // 首节点无prev
         node->next = list->head;
         list->head->prev = node;
         list->head = node;
@@ -106,19 +110,20 @@ list *listAddNodeHead(list *list, void *value)
 list *listAddNodeTail(list *list, void *value)
 {
     listNode *node;
-
+    // 创建一个新节点，把value放入节点，并把节点放到队尾
     if ((node = zmalloc(sizeof(*node))) == NULL)
         return NULL;
     node->value = value;
     if (list->len == 0) {
         list->head = list->tail = node;
-        node->prev = node->next = NULL;
+        node->prev = node->next = NULL; // 首节点无prev，尾节点无next
     } else {
         node->prev = list->tail;
-        node->next = NULL;
+        node->next = NULL;  // 尾节点无next
         list->tail->next = node;
         list->tail = node;
     }
+    // 调整链表长度
     list->len++;
     return list;
 }
@@ -129,16 +134,25 @@ list *listAddNodeTail(list *list, void *value)
  * This function can't fail. */
 void listDelNode(list *list, listNode *node)
 {
+    // 基于首节点无prev特点，判定是否首节点
+    // 调整上个节点next指针
     if (node->prev)
         node->prev->next = node->next;
     else
         list->head = node->next;
+    
+    // 基于尾节点无next特点，判定是否尾节点
+    // 调整下个节点prev指针
     if (node->next)
         node->next->prev = node->prev;
     else
         list->tail = node->prev;
+
+    // 调用析构与内存释放处理
     if (list->free) list->free(node->value);
     zfree(node);
+
+    // 调整链表长度
     list->len--;
 }
 
@@ -149,7 +163,7 @@ void listDelNode(list *list, listNode *node)
 listIter *listGetIterator(list *list, int direction)
 {
     listIter *iter;
-    
+    // 创建遍历器，前向遍历时指向head，后向遍历时指向tail，并记录direction
     if ((iter = zmalloc(sizeof(*iter))) == NULL) return NULL;
     if (direction == AL_START_HEAD)
         iter->next = list->head;
@@ -161,16 +175,19 @@ listIter *listGetIterator(list *list, int direction)
 
 /* Release the iterator memory */
 void listReleaseIterator(listIter *iter) {
+    // 释放iterator
     zfree(iter);
 }
 
 /* Create an iterator in the list private iterator structure */
 void listRewind(list *list, listIter *li) {
+    // 重新指向head，前设定为前向遍历
     li->next = list->head;
     li->direction = AL_START_HEAD;
 }
 
 void listRewindTail(list *list, listIter *li) {
+    // 重新指向tail，并设定后向遍历
     li->next = list->tail;
     li->direction = AL_START_TAIL;
 }
@@ -192,7 +209,7 @@ void listRewindTail(list *list, listIter *li) {
 listNode *listNext(listIter *iter)
 {
     listNode *current = iter->next;
-
+    // 基于遍历方向，返回当前指向的next节点值，并让iter指向下一个元素
     if (current != NULL) {
         if (iter->direction == AL_START_HEAD)
             iter->next = current->next;
@@ -215,12 +232,17 @@ list *listDup(list *orig)
     list *copy;
     listIter *iter;
     listNode *node;
-
+    
+    // 创建一个空链表，并把value的三个处理函数dup/free/match函数指针赋值过来
     if ((copy = listCreate()) == NULL)
         return NULL;
     copy->dup = orig->dup;
     copy->free = orig->free;
     copy->match = orig->match;
+
+    // 遍历原链表，基于是否有value-dup函数，确定是否复制value;
+    // 把获取到的value值放入到链表中；
+    // 附加相关的异常处理；
     iter = listGetIterator(orig, AL_START_HEAD);
     while((node = listNext(iter)) != NULL) {
         void *value;
@@ -257,7 +279,9 @@ listNode *listSearchKey(list *list, void *key)
 {
     listIter *iter;
     listNode *node;
-
+    
+    // list查找函数，使用Iter从头开始查询，查询到时返回节点指针；
+    // 匹配方式：如果有value-match函数时，查询时使用match函数，如果没有时，直接比较的两个指针的指向是否一致了。
     iter = listGetIterator(list, AL_START_HEAD);
     while((node = listNext(iter)) != NULL) {
         if (list->match) {
@@ -283,7 +307,8 @@ listNode *listSearchKey(list *list, void *key)
  * and so on. If the index is out of range NULL is returned. */
 listNode *listIndex(list *list, int index) {
     listNode *n;
-
+    
+    // 基于index查找，为正值时，从前向后找；为负值时，从队尾向前找；
     if (index < 0) {
         index = (-index)-1;
         n = list->tail;

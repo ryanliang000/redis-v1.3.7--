@@ -35,15 +35,25 @@
 #define ANET_ERR -1
 #define ANET_ERR_LEN 256
 
+// 建立一个tcp连接
 int anetTcpConnect(char *err, char *addr, int port);
+// 建立一个nonblock-tcp的连接
 int anetTcpNonBlockConnect(char *err, char *addr, int port);
+// 从fd读取指定count的字节
 int anetRead(int fd, char *buf, int count);
+// 解析host到ipaddr到ipbuf
 int anetResolve(char *err, char *host, char *ipbuf);
+// 建立一个tcpserver监听端口，可选指定bindaddr
 int anetTcpServer(char *err, int port, char *bindaddr);
+// 接受一个serversock上来的连接，输出连接上来的ip和port，返回连接fd
 int anetAccept(char *err, int serversock, char *ip, int *port);
+// 向fd写入指定count的字节
 int anetWrite(int fd, char *buf, int count);
+// 设定fd参数nonblock
 int anetNonBlock(char *err, int fd);
+// 设定fd参数NoDelay
 int anetTcpNoDelay(char *err, int fd);
+// 设定fd参数keepalive
 int anetTcpKeepAlive(char *err, int fd);
 
 #endif
